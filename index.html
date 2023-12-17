@@ -64,6 +64,11 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
+
+     fetch('https://raw.githubusercontent.com/stevenfhill/earth-fair/main/routes.geojson')
+        .then(response => response.json())
+        .then(geojson => {
+            L.geoJSON(geojson).addTo(map);
 </script>
 
 </body>
