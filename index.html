@@ -69,6 +69,7 @@
         .then(response => response.json())
         .then(geojson => {
             L.geoJSON(geojson).addTo(map);
+        });
 </script>
 
 </body>
