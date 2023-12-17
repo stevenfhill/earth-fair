@@ -65,7 +65,7 @@
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-     fetch('https://raw.githubusercontent.com/stevenfhill/earth-fair/main/tracks.geojson')
+    fetch('https://raw.githubusercontent.com/stevenfhill/earth-fair/main/tracks.geojson')
         .then(response => response.json())
         .then(geojson => {
             L.geoJSON(geojson, {
@@ -78,9 +78,9 @@
                         opacity: 1,
                         fillOpacity: 0.7
                     };
-                })addTo(map);
+                }
+            }).addTo(map); // Closing parenthesis here
         });
-</script>
 
 </body>
 </html>
