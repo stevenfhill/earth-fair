@@ -1,36 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TIFF Map Viewer</title>
+    <!-- ... (head content) ... -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        #map {
-            height: 500px;
-        }
-    </style>
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet Geolocation JavaScript -->
+    <script src="https://unpkg.com/leaflet-geolocation/dist/leaflet-geolocation.js"></script>
 </head>
 <body>
-
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script>
-    var map = L.map('map').setView([0, 0], 2); // Set your initial coordinates and zoom level
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Replace 'path/to/your/tiff/file.tif' with the actual path to your TIFF file
-    var tiffUrl = 'path/to/your/tiff/file.tif';
-
-    var tiff = L.imageOverlay(tiffUrl, [
-        [90, -180],
-        [-90, 180]
-    ]).addTo(map);
-</script>
-
+    <div id="map" style="height: 400px;"></div>
+    <!-- Include your JavaScript file -->
+    <script src="yourscript.js"></script>
 </body>
 </html>
