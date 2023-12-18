@@ -3,17 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaflet Geolocation Plugin</title>
+    <title>Wake County Map</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <!-- Leaflet Geolocation JavaScript -->
-    <script src="https://unpkg.com/leaflet-geolocation/dist/leaflet-geolocation.js"></script>
-    <!-- Your JavaScript file -->
-    <script src="https://raw.githubusercontent.com/stevenfhill/earth-fair/main/findmehaha.js"></script>
 </head>
 <body>
-    <div id="map" style="height: 400px;"></div>
+    <div id="map" style="height: 600px;"></div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        // Initialize the map centered on Wake County, North Carolina
+        var map = L.map('map').setView([35.8032, -78.5661], 10);
+
+        // Add a basemap (you can replace this with your preferred basemap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+    </script>
 </body>
 </html>
