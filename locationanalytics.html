@@ -6,31 +6,14 @@
     <title>Leaflet Geolocation Plugin</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet Geolocation JavaScript -->
     <script src="https://unpkg.com/leaflet-geolocation/dist/leaflet-geolocation.js"></script>
+    <!-- Your JavaScript file -->
+    <script src="https://raw.githubusercontent.com/stevenfhill/earth-fair/main/findmehaha.js"></script>
 </head>
 <body>
     <div id="map" style="height: 400px;"></div>
-    
-    <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    
-    <script>
-        // Initialize the map
-        var map = L.map('map').setView([0, 0], 2); // Default view
-
-        // Add a basemap (you can replace this with your preferred basemap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-    </script>
-    <script src="https://raw.githubusercontent.com/stevenfhill/earth-fair/main/findmehaha.js"></script>
-
-    <script>
-        // Ensure the DOMContentLoaded event is fired
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log("Script loaded");
-        });
-    </script>
 </body>
 </html>
