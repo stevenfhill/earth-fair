@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psychedelic Page</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const images = [
+            'https://yourgithubusername.github.io/yourrepository/image1.jpg',
+            'https://yourgithubusername.github.io/yourrepository/image2.jpg',
+            // Add more image URLs as needed
+        ];
+
+        let currentImageIndex = 0;
+
+        function preloadImages() {
+            images.forEach((imageUrl) => {
+                const img = new Image();
+                img.src = imageUrl;
+            });
+        }
+
+        function showNextImage() {
+            const img = document.querySelector('img');
+            img.src = images[currentImageIndex];
+            img.style.display = 'block';
+
+            // Hide the image after a short delay
+            setTimeout(() => {
+                img.style.display = 'none';
+                // Show the next image
+                currentImageIndex = (currentImageIndex + 1) % images.length;
+                showNextImage();
+            }, 100); // Adjust the delay as needed
+        }
+
+        // Start the animation
+        preloadImages();
+        showNextImage();
+    </script>
+</body>
+</html>
