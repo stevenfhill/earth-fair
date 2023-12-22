@@ -25,6 +25,25 @@
         }).addTo(map);
 
         var geojsonLayer = new L.GeoJSON.AJAX('https://raw.githubusercontent.com/stevenfhill/earth-fair/main/school_buffer.json').addTo(map);
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                var userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+
+                // Check if the user is inside the polygon
+                if (isPointInsidePolygon(userLatLng, geojsonLayer)) {
+                    alert("You are inside the polygon!");
+                }
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+
+        // Function to check if a point is inside a polygon
+        function isPointInsidePolygon(point, polygonLayer) {
+            var polygon = polygonLayer.toGeoJSON();
+            return turf.booleanPointInPolygon(turf.point([point.lng, point.lat]), polygon.geometry);
+        }
     </script>
+    <script src="https://unpkg.com/@turf/turf@6.3.0"></script>
 </body>
 </html>
