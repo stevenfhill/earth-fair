@@ -62,7 +62,7 @@ c<!DOCTYPE html>
 
     <script>
         // Initialize the map centered on Wake County, North Carolina
-        var map = L.map('map').setView([userLatLng.lat, userLatLng.lng], 15);
+        var map = L.map('map').setView([35.77603969549853, -78.63832970038803], 15);
 
         // Add a basemap (you can replace this with your preferred basemap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -90,6 +90,9 @@ c<!DOCTYPE html>
             var polygon = polygonLayer.toGeoJSON();
             return turf.booleanPointInPolygon(turf.point([point.lng, point.lat]), polygon.geometry);
         }
+        // Zoom to the user's location
+        map.setView([userLatLng.lat, userLatLng.lng], 4); // Adjust the zoom level (15 is just an example)
+
     </script>
     <script src="https://unpkg.com/@turf/turf@6.3.0"></script>
 </body>
