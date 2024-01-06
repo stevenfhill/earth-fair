@@ -62,7 +62,7 @@ c<!DOCTYPE html>
 
     <script>
         // Initialize the map centered on Wake County, North Carolina
-        var map = L.map('map').setView([35.8032, -78.5661], 10);
+        var map = L.map('map').setView([[userLatLng.lat, userLatLng.lng]], 15);
 
         // Add a basemap (you can replace this with your preferred basemap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
