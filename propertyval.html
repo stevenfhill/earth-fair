@@ -1,0 +1,116 @@
+Chat history
+ChatGPT
+New chat
+
+Today
+Leaflet Map with Zoom.
+
+
+Wake County Map Check
+Previous 7 Days
+Stalker Protection Device
+Kubernetes Integration at ESRI
+Online Messenger Horror Thriller.
+Mobile vs Desktop Principles
+Previous 30 Days
+Marriage Annulments: Types & Grounds
+LiDAR Canopy Delineation Process
+Clearance and Involuntary Commitment.
+April
+Household Value Calculator Web
+February
+User Request: Summarize conversation
+January
+10K Race in Paris
+CWA EIS Unavailable
+Movie Suggestions: Genre Inquiry
+Zoom Issue, Leaflet Code
+Online Shooter Game Identification
+Cover Letter for Trail Job
+2023
+Psychedelic Flashing Images Page
+New chat
+Pathognomonic Signs Explained
+Leaflet Geolocation Plugin
+Host TIFF in Online Map
+Mountain Trail Design Algorithms
+GIS Specialist Government Databases
+Esri Web App Guide
+Arcpy Basics Explained
+KML to Shapefile Python
+HTML Coding Assistance
+Upgrade plan
+Get GPT-4, DALL·E, and more
+
+User
+Steven Hill
+
+Close sidebar
+ChatGPT 3.5
+
+User
+Leaflet map with ability to zoom to coordinates entered into box
+ChatGPT
+To create a Leaflet map with the ability to zoom to coordinates entered into a box, you can use HTML, CSS, and JavaScript. Here's a basic example:
+
+html
+Copy code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaflet Map with Zoom</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 400px;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div>
+    <label for="latitude">Latitude:</label>
+    <input type="text" id="latitude" placeholder="Latitude">
+    <label for="longitude">Longitude:</label>
+    <input type="text" id="longitude" placeholder="Longitude">
+    <button onclick="zoomToCoordinates()">Zoom to Coordinates</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    var map = L.map('map').setView([0, 0], 2); // Initial coordinates and zoom level
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+
+    function zoomToCoordinates() {
+      var latitude = parseFloat(document.getElementById('latitude').value);
+      var longitude = parseFloat(document.getElementById('longitude').value);
+
+      if (isNaN(latitude) || isNaN(longitude)) {
+        alert('Please enter valid coordinates.');
+        return;
+      }
+
+      map.setView([latitude, longitude], 13);
+    }
+  </script>
+</body>
+</html>
+This HTML file sets up a Leaflet map with inputs for latitude and longitude and a button to zoom to the entered coordinates. When you enter latitude and longitude and click the button, it will move the map to those coordinates. Make sure to replace https://unpkg.com/leaflet/dist/leaflet.css and https://unpkg.com/leaflet/dist/leaflet.js with the latest versions of Leaflet if needed.
+
+
+
+
+
+
+
+Message ChatGPT
+
+ChatGPT can make mistakes. Consider checking important information.
+
+?
+ChatGPT
