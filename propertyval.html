@@ -41,6 +41,31 @@
 
       map.setView([latitude, longitude], 13);
     }
+
+  function createBuffer() {
+      var latitude = parseFloat(document.getElementById('latitude').value);
+      var longitude = parseFloat(document.getElementById('longitude').value);
+
+      if (isNaN(latitude) || isNaN(longitude)) {
+        alert('Please enter valid coordinates.');
+        return;
+      }
+
+      // Send latitude and longitude to backend script to create buffer
+      fetch('/create_buffer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ latitude: latitude, longitude: longitude })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Handle response, e.g., display buffer on map
+        console.log(data);
+      })
+      .catch(error => console.error('Error:', error));
+    }
   </script>
 </body>
 </html>
