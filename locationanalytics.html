@@ -7,34 +7,28 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <title>Custom Alert</title>
-    <style>
-        
-         #map-container {
-            position: relative;
-            height: 60vh;
-            margin: 20px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
+     <style>
+        /* Styling for the map container */
+        #map-container {
+            height: 500px; /* Set the height of the map container */
+            margin: 20px; /* Add margin around the map container */
+            border: 2px solid #ddd; /* Add a border around the map container */
+            border-radius: 8px; /* Add border radius to make it rounded */
         }
 
+        /* Styling for the map element */
         #map {
-            height: 100%;
-            width: 100%;
-        }
-         #splash-container {
-            position: absolute;
-            top: 85%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: #000;
-            z-index: 1000;
+            width: 100%; /* Make the map fill the entire width of its container */
+            height: 100%; /* Make the map fill the entire height of its container */
         }
     </style>
+
 </head>
 <body>
-    <div id="map" style="height: 100%;"></div>
+    <div id="map-container">
+        <!-- Map will be rendered here -->
+        <div id="map"></div>
+    </div>
 
     <!-- Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
