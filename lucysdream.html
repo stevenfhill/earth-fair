@@ -50,114 +50,118 @@
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
-    // Get the message box element to update its content
-    const messageBox = document.getElementById('message-box');
+    // To fix the "L is not defined" error, we will wait for the DOM to be fully loaded,
+    // which ensures the Leaflet and Turf.js scripts have been executed.
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // Get the message box element to update its content
+        const messageBox = document.getElementById('message-box');
 
-    // Initialize the map with a default view centered on Cary, NC
-    var map = L.map('map').setView([35.78, -78.78], 12);
+        // Initialize the map with a default view centered on Cary, NC
+        var map = L.map('map').setView([35.78, -78.78], 12);
 
-    // Add a base tile layer from OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+        // Add a base tile layer from OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
 
-    // Load the GeoJSON parcel data directly from the GitHub URL
-    const geojsonUrl = 'https://raw.githubusercontent.com/stevenfhill/earth-fair/main/cary_parcel.json';
+        // Load the GeoJSON parcel data directly from the GitHub URL
+        const geojsonUrl = 'https://raw.githubusercontent.com/stevenfhill/earth-fair/main/cary_parcel.json';
 
-    // The main function to run the analysis
-    function runAnalysis(parcelsData) {
-        // Find the user's location using the Geolocation API
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(position => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-                const userLocation = [userLng, userLat];
+        // The main function to run the analysis
+        function runAnalysis(parcelsData) {
+            // Find the user's location using the Geolocation API
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    const userLocation = [userLng, userLat];
 
-                // Add a marker for the user's location
-                L.marker([userLat, userLng]).addTo(map)
-                    .bindPopup("You are here!").openPopup();
+                    // Add a marker for the user's location
+                    L.marker([userLat, userLng]).addTo(map)
+                        .bindPopup("You are here!").openPopup();
 
-                // Use Turf.js to create a point feature from the user's location
-                const userPoint = turf.point(userLocation);
+                    // Use Turf.js to create a point feature from the user's location
+                    const userPoint = turf.point(userLocation);
 
-                // Create a 3-mile buffer around the user's point
-                const bufferedArea = turf.buffer(userPoint, 3, { units: 'miles' });
+                    // Create a 3-mile buffer around the user's point
+                    const bufferedArea = turf.buffer(userPoint, 3, { units: 'miles' });
 
-                // Add the buffer polygon to the map with custom styling
-                L.geoJSON(bufferedArea, {
-                    style: {
-                        color: '#0078FF',
-                        weight: 3,
-                        opacity: 0.5,
-                        fillOpacity: 0.2
-                    }
-                }).addTo(map);
-
-                // Use Turf.js to find all parcels that intersect with the buffered area
-                const parcelsWithinBuffer = turf.pointsWithinPolygon(parcelsData, bufferedArea);
-
-                // Add the filtered parcels to the map with a highlight style
-                L.geoJSON(parcelsWithinBuffer, {
-                    style: {
-                        color: 'red',
-                        weight: 3,
-                        fillOpacity: 0.5
-                    },
-                    // Add a popup for each parcel
-                    onEachFeature: function(feature, layer) {
-                        if (feature.properties && feature.properties.ID) {
-                            layer.bindPopup("Parcel ID: " + feature.properties.ID);
+                    // Add the buffer polygon to the map with custom styling
+                    L.geoJSON(bufferedArea, {
+                        style: {
+                            color: '#0078FF',
+                            weight: 3,
+                            opacity: 0.5,
+                            fillOpacity: 0.2
                         }
+                    }).addTo(map);
+
+                    // Use Turf.js to find all parcels that intersect with the buffered area
+                    const parcelsWithinBuffer = turf.pointsWithinPolygon(parcelsData, bufferedArea);
+
+                    // Add the filtered parcels to the map with a highlight style
+                    L.geoJSON(parcelsWithinBuffer, {
+                        style: {
+                            color: 'red',
+                            weight: 3,
+                            fillOpacity: 0.5
+                        },
+                        // Add a popup for each parcel
+                        onEachFeature: function(feature, layer) {
+                            if (feature.properties && feature.properties.ID) {
+                                layer.bindPopup("Parcel ID: " + feature.properties.ID);
+                            }
+                        }
+                    }).addTo(map);
+
+                    // Calculate the average income of the collected parcels
+                    if (parcelsWithinBuffer.features.length > 0) {
+                        const incomeValues = parcelsWithinBuffer.features.map(feature => feature.properties.income);
+                        const sum = incomeValues.reduce((a, b) => a + b, 0);
+                        const averageIncome = sum / incomeValues.length;
+
+                        // Update the message box with the results
+                        messageBox.innerHTML = `
+                            <p><strong>Analysis Complete!</strong></p>
+                            <p>Parcels found: ${parcelsWithinBuffer.features.length}</p>
+                            <p>Average Income: $${averageIncome.toFixed(2)}</p>
+                        `;
+                    } else {
+                        messageBox.innerHTML = "No parcels found within the 3-mile buffer.";
                     }
-                }).addTo(map);
 
-                // Calculate the average income of the collected parcels
-                if (parcelsWithinBuffer.features.length > 0) {
-                    const incomeValues = parcelsWithinBuffer.features.map(feature => feature.properties.income);
-                    const sum = incomeValues.reduce((a, b) => a + b, 0);
-                    const averageIncome = sum / incomeValues.length;
+                    // Center the map and zoom to show the buffer
+                    map.fitBounds(L.geoJSON(bufferedArea).getBounds());
 
-                    // Update the message box with the results
-                    messageBox.innerHTML = `
-                        <p><strong>Analysis Complete!</strong></p>
-                        <p>Parcels found: ${parcelsWithinBuffer.features.length}</p>
-                        <p>Average Income: $${averageIncome.toFixed(2)}</p>
-                    `;
-                } else {
-                    messageBox.innerHTML = "No parcels found within the 3-mile buffer.";
-                }
-
-                // Center the map and zoom to show the buffer
-                map.fitBounds(L.geoJSON(bufferedArea).getBounds());
-
-            }, error => {
-                // Display error message if geolocation fails
-                messageBox.innerHTML = "Error getting location: " + error.message;
-                console.error("Geolocation Error:", error.message);
-            });
-        } else {
-            // Display message if geolocation is not supported
-            messageBox.innerHTML = "Geolocation is not supported by your browser.";
-        }
-    }
-
-    // Fetch the GeoJSON data and then run the analysis
-    fetch(geojsonUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+                }, error => {
+                    // Display error message if geolocation fails
+                    messageBox.innerHTML = "Error getting location: " + error.message;
+                    console.error("Geolocation Error:", error.message);
+                });
+            } else {
+                // Display message if geolocation is not supported
+                messageBox.innerHTML = "Geolocation is not supported by your browser.";
             }
-            return response.json();
-        })
-        .then(data => {
-            // Once data is loaded, run the main analysis function
-            runAnalysis(data);
-        })
-        .catch(error => {
-            // Display error if data loading fails
-            messageBox.innerHTML = 'Error loading data. Please check the network connection or the URL.';
-            console.error('Data Loading Error:', error);
-        });
+        }
+
+        // Fetch the GeoJSON data and then run the analysis
+        fetch(geojsonUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Once data is loaded, run the main analysis function
+                runAnalysis(data);
+            })
+            .catch(error => {
+                // Display error if data loading fails
+                messageBox.innerHTML = 'Error loading data. Please check the network connection or the URL.';
+                console.error('Data Loading Error:', error);
+            });
+    });
 </script>
 
 </body>
