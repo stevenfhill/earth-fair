@@ -27,6 +27,23 @@
             width: 100%;
             height: 100%;
         }
+
+        /* Styling for the custom message box with a fade transition */
+        #message-box {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Use a utility class to control visibility with opacity */
+        .is-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Keep hidden class for initial state, but use opacity for effect */
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-start min-h-screen p-4">
@@ -73,12 +90,17 @@
             // Function to show the custom message box
             function showCustomMessage(message) {
                 messageText.textContent = message;
+                messageBox.classList.add('is-visible');
                 messageBox.classList.remove('hidden');
             }
 
             // Hide the message box when the close button is clicked
             closeButton.addEventListener('click', () => {
-                messageBox.classList.add('hidden');
+                messageBox.classList.remove('is-visible');
+                // Use a timeout to fully hide the element after the transition is complete
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 300);
             });
 
             // Load the GeoJSON file containing the polygon
