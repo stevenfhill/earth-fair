@@ -4,27 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cary Parcel Analysis</title>
+    <!-- Leaflet CSS for map styling -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIINfBG9rRspU3y8xUf/Masterc/g+EaXoYfA="
         crossorigin=""/>
     <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
         #map {
             height: 100vh;
             width: 100%;
+        }
+        #message-box {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            text-align: right;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
+<div id="message-box">
+    <!-- Results will be displayed here -->
+    <p>Loading data...</p>
+</div>
 
+<!-- Leaflet and Turf.js are placed here to ensure they load before the main script. -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-2009360520288293774783935212359489263725838573620868202452"
     crossorigin=""></script>
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
-    // Initialize the map with a default view
+    // Get the message box element to update its content
+    const messageBox = document.getElementById('message-box');
+
+    // Initialize the map with a default view centered on Cary, NC
     var map = L.map('map').setView([35.78, -78.78], 12);
 
     // Add a base tile layer from OpenStreetMap
@@ -32,9 +61,88 @@
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Load your demographic data directly from the GitHub URL
+    // Load the GeoJSON parcel data directly from the GitHub URL
     const geojsonUrl = 'https://raw.githubusercontent.com/stevenfhill/earth-fair/main/cary_parcel.json';
 
+    // The main function to run the analysis
+    function runAnalysis(parcelsData) {
+        // Find the user's location using the Geolocation API
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                const userLocation = [userLng, userLat];
+
+                // Add a marker for the user's location
+                L.marker([userLat, userLng]).addTo(map)
+                    .bindPopup("You are here!").openPopup();
+
+                // Use Turf.js to create a point feature from the user's location
+                const userPoint = turf.point(userLocation);
+
+                // Create a 3-mile buffer around the user's point
+                const bufferedArea = turf.buffer(userPoint, 3, { units: 'miles' });
+
+                // Add the buffer polygon to the map with custom styling
+                L.geoJSON(bufferedArea, {
+                    style: {
+                        color: '#0078FF',
+                        weight: 3,
+                        opacity: 0.5,
+                        fillOpacity: 0.2
+                    }
+                }).addTo(map);
+
+                // Use Turf.js to find all parcels that intersect with the buffered area
+                const parcelsWithinBuffer = turf.pointsWithinPolygon(parcelsData, bufferedArea);
+
+                // Add the filtered parcels to the map with a highlight style
+                L.geoJSON(parcelsWithinBuffer, {
+                    style: {
+                        color: 'red',
+                        weight: 3,
+                        fillOpacity: 0.5
+                    },
+                    // Add a popup for each parcel
+                    onEachFeature: function(feature, layer) {
+                        if (feature.properties && feature.properties.ID) {
+                            layer.bindPopup("Parcel ID: " + feature.properties.ID);
+                        }
+                    }
+                }).addTo(map);
+
+                // Calculate the median ID of the collected parcels
+                if (parcelsWithinBuffer.features.length > 0) {
+                    const ids = parcelsWithinBuffer.features.map(feature => feature.properties.ID);
+                    ids.sort((a, b) => a - b);
+                    const mid = Math.floor(ids.length / 2);
+                    const medianID = ids.length % 2 !== 0 ? ids[mid] : (ids[mid - 1] + ids[mid]) / 2;
+
+                    // Update the message box with the results
+                    messageBox.innerHTML = `
+                        <p><strong>Analysis Complete!</strong></p>
+                        <p>Parcels found: ${parcelsWithinBuffer.features.length}</p>
+                        <p>Median Parcel ID: ${medianID}</p>
+                    `;
+                } else {
+                    messageBox.innerHTML = "No parcels found within the 3-mile buffer.";
+                }
+
+                // Center the map and zoom to show the buffer
+                map.fitBounds(L.geoJSON(bufferedArea).getBounds());
+
+            }, error => {
+                // Display error message if geolocation fails
+                messageBox.innerHTML = "Error getting location: " + error.message;
+                console.error("Geolocation Error:", error.message);
+            });
+        } else {
+            // Display message if geolocation is not supported
+            messageBox.innerHTML = "Geolocation is not supported by your browser.";
+        }
+    }
+
+    // Fetch the GeoJSON data and then run the analysis
     fetch(geojsonUrl)
         .then(response => {
             if (!response.ok) {
@@ -43,71 +151,13 @@
             return response.json();
         })
         .then(data => {
-            // Find the user's location
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    const userLocation = [userLng, userLat];
-
-                    // Add a marker for the user's location
-                    L.marker([userLat, userLng]).addTo(map)
-                        .bindPopup("You are here!").openPopup();
-
-                    // Create a Turf.js point from the user's location
-                    const userPoint = turf.point(userLocation);
-
-                    // Create a 3-mile buffer around the user's point
-                    const bufferedArea = turf.buffer(userPoint, 3, { units: 'miles' });
-
-                    // Add the buffer polygon to the map
-                    L.geoJSON(bufferedArea, {
-                        style: {
-                            color: '#0078FF',
-                            weight: 3,
-                            opacity: 0.5,
-                            fillOpacity: 0.2
-                        }
-                    }).addTo(map);
-
-                    // Find all parcels (features) within the buffered area
-                    const parcelsWithinBuffer = turf.pointsWithinPolygon(data, bufferedArea);
-
-                    // Add the parcels within the buffer to the map with a highlight
-                    L.geoJSON(parcelsWithinBuffer, {
-                        style: {
-                            color: 'red',
-                            weight: 3,
-                            fillOpacity: 0.5
-                        }
-                    }).addTo(map);
-
-                    // Calculate the median ID of the collected parcels
-                    if (parcelsWithinBuffer.features.length > 0) {
-                        const ids = parcelsWithinBuffer.features.map(feature => feature.properties.ID);
-                        // Sort the IDs to find the median
-                        ids.sort((a, b) => a - b);
-                        const mid = Math.floor(ids.length / 2);
-                        const medianID = ids.length % 2 !== 0 ? ids[mid] : (ids[mid - 1] + ids[mid]) / 2;
-
-                        alert(`Parcels found: ${parcelsWithinBuffer.features.length}\nMedian Parcel ID within 3 miles: ${medianID}`);
-                    } else {
-                        alert("No parcels found within the 3-mile buffer.");
-                    }
-
-                    // Center the map and zoom to show the buffer
-                    map.fitBounds(L.geoJSON(bufferedArea).getBounds());
-
-                }, error => {
-                    alert("Error getting location: " + error.message);
-                });
-            } else {
-                alert("Geolocation is not supported by your browser.");
-            }
+            // Once data is loaded, run the main analysis function
+            runAnalysis(data);
         })
         .catch(error => {
-            console.error('Error loading data:', error);
-            alert('Error loading data. Please check the network connection.');
+            // Display error if data loading fails
+            messageBox.innerHTML = 'Error loading data. Please check the network connection or the URL.';
+            console.error('Data Loading Error:', error);
         });
 </script>
 
