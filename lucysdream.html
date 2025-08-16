@@ -43,7 +43,6 @@
             // Create a GeoJSON layer
             var geojsonLayer = L.geoJSON(data, {
                 style: function(feature) {
-                    // You can add custom styles based on properties of each feature
                     return {
                         color: '#ff7800',
                         weight: 2,
@@ -51,7 +50,6 @@
                     };
                 },
                 onEachFeature: function(feature, layer) {
-                    // Add a popup with the parcel's ID
                     if (feature.properties && feature.properties.ID) {
                         layer.bindPopup("Parcel ID: " + feature.properties.ID);
                     }
@@ -65,6 +63,33 @@
             console.error('Error loading GeoJSON data:', error);
             alert('Error loading the data. Make sure cary_parcel.json is in the same folder.');
         });
+
+    // Functionality to find and display the user's location
+    function findUserLocation() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                var userLocation = [lat, lng];
+
+                // Add a marker for the user's location
+                var userMarker = L.marker(userLocation).addTo(map)
+                    .bindPopup("Your Location").openPopup();
+
+                // Center the map on the user's location
+                map.setView(userLocation, 16);
+            }, function(error) {
+                // Handle errors
+                console.error("Error getting user location:", error.message);
+                alert("Could not get your location. Please ensure location services are enabled.");
+            });
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+    }
+
+    // Call the function to find the user's location
+    findUserLocation();
 </script>
 
 </body>
