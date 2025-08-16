@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cary Parcel Data</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfBG9rRspU3y8xUf/Masterc/g+EaXoYfA="
+        crossorigin=""/>
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-2009360520288293774783935212359489263725838573620868202452"
+    crossorigin=""></script>
+
+<script>
+    // Initialize the map and set its view to a central point in Cary, NC
+    var map = L.map('map').setView([35.78, -78.78], 12);
+
+    // Add a tile layer (the base map)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Fetch and add your GeoJSON data to the map
+    fetch('cary_parcel.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Create a GeoJSON layer
+            var geojsonLayer = L.geoJSON(data, {
+                style: function(feature) {
+                    // You can add custom styles based on properties of each feature
+                    return {
+                        color: '#ff7800',
+                        weight: 2,
+                        opacity: 0.65
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    // Add a popup with the parcel's ID
+                    if (feature.properties && feature.properties.ID) {
+                        layer.bindPopup("Parcel ID: " + feature.properties.ID);
+                    }
+                }
+            }).addTo(map);
+
+            // Fit the map view to the bounds of the GeoJSON data
+            map.fitBounds(geojsonLayer.getBounds());
+        })
+        .catch(error => {
+            console.error('Error loading GeoJSON data:', error);
+            alert('Error loading the data. Make sure cary_parcel.json is in the same folder.');
+        });
+</script>
+
+</body>
+</html>
