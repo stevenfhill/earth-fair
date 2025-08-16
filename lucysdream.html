@@ -32,6 +32,7 @@
             max-width: 300px;
             text-align: right;
             border: 1px solid #ccc;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -39,52 +40,51 @@
 
 <div id="map"></div>
 <div id="message-box">
-    <!-- Results will be displayed here -->
     <p>Loading data...</p>
 </div>
 
-<!-- Leaflet and Turf.js are placed here to ensure they load before the main script. -->
+<!-- Leaflet and Turf.js -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-2009360520288293774783935212359489263725838573620868202452"
     crossorigin=""></script>
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
-    // Get the message box element to update its content
     const messageBox = document.getElementById('message-box');
 
-    // Initialize the map with a default view centered on Cary, NC
+    // Initialize map centered on Cary, NC
     var map = L.map('map').setView([35.78, -78.78], 12);
 
-    // Add a base tile layer from OpenStreetMap
+    // Add base map layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Load the GeoJSON parcel data directly from the GitHub URL
-    // This URL is now for a GitHub Pages site, assuming the repository is named 'earth-fair'
+    // GeoJSON data URL (GitHub Pages version)
     const geojsonUrl = 'https://stevenfhill.github.io/earth-fair/cary_parcel.json';
 
-    // The main function to run the analysis
     function runAnalysis(parcelsData) {
-        // Find the user's location using the Geolocation API
+        // Safety check: draw all parcels in green first
+        L.geoJSON(parcelsData, {
+            style: { color: "green", weight: 1, fillOpacity: 0.1 }
+        }).addTo(map);
+
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(position => {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
-                const userLocation = [userLng, userLat];
 
-                // Add a marker for the user's location
+                // Leaflet marker (lat, lng)
                 L.marker([userLat, userLng]).addTo(map)
                     .bindPopup("You are here!").openPopup();
 
-                // Use Turf.js to create a point feature from the user's location
-                const userPoint = turf.point(userLocation);
+                // Turf point (lng, lat)
+                const userPoint = turf.point([userLng, userLat]);
 
-                // Create a 3-mile buffer around the user's point
+                // Buffer 3 miles around user
                 const bufferedArea = turf.buffer(userPoint, 3, { units: 'miles' });
 
-                // Add the buffer polygon to the map with custom styling
+                // Draw buffer polygon
                 L.geoJSON(bufferedArea, {
                     style: {
                         color: '#0078FF',
@@ -94,17 +94,21 @@
                     }
                 }).addTo(map);
 
-                // Use Turf.js to find all parcels that intersect with the buffered area
-                const parcelsWithinBuffer = turf.pointsWithinPolygon(parcelsData, bufferedArea);
+                // Filter parcels that intersect buffer
+                const parcelsWithinBuffer = {
+                    type: "FeatureCollection",
+                    features: parcelsData.features.filter(parcel =>
+                        turf.booleanIntersects(parcel, bufferedArea)
+                    )
+                };
 
-                // Add the filtered parcels to the map with a highlight style
+                // Add intersecting parcels in red
                 L.geoJSON(parcelsWithinBuffer, {
                     style: {
                         color: 'red',
-                        weight: 3,
-                        fillOpacity: 0.5
+                        weight: 2,
+                        fillOpacity: 0.4
                     },
-                    // Add a popup for each parcel
                     onEachFeature: function(feature, layer) {
                         if (feature.properties && feature.properties.ID) {
                             layer.bindPopup("Parcel ID: " + feature.properties.ID);
@@ -112,50 +116,54 @@
                     }
                 }).addTo(map);
 
-                // Calculate the average income of the collected parcels
+                // Calculate average income
                 if (parcelsWithinBuffer.features.length > 0) {
-                    const incomeValues = parcelsWithinBuffer.features.map(feature => feature.properties.income);
-                    const sum = incomeValues.reduce((a, b) => a + b, 0);
-                    const averageIncome = sum / incomeValues.length;
+                    const incomeValues = parcelsWithinBuffer.features
+                        .map(f => f.properties.income)
+                        .filter(val => typeof val === "number");
 
-                    // Update the message box with the results
-                    messageBox.innerHTML = `
-                        <p><strong>Analysis Complete!</strong></p>
-                        <p>Parcels found: ${parcelsWithinBuffer.features.length}</p>
-                        <p>Average Income: $${averageIncome.toFixed(2)}</p>
-                    `;
+                    if (incomeValues.length > 0) {
+                        const sum = incomeValues.reduce((a, b) => a + b, 0);
+                        const avgIncome = sum / incomeValues.length;
+                        messageBox.innerHTML = `
+                            <p><strong>Analysis Complete!</strong></p>
+                            <p>Parcels found: ${parcelsWithinBuffer.features.length}</p>
+                            <p>Average Income: $${avgIncome.toFixed(2)}</p>
+                        `;
+                    } else {
+                        messageBox.innerHTML = `
+                            <p><strong>Analysis Complete!</strong></p>
+                            <p>Parcels found: ${parcelsWithinBuffer.features.length}</p>
+                            <p>No income data available.</p>
+                        `;
+                    }
                 } else {
                     messageBox.innerHTML = "No parcels found within the 3-mile buffer.";
                 }
 
-                // Center the map and zoom to show the buffer
+                // Zoom to buffer
                 map.fitBounds(L.geoJSON(bufferedArea).getBounds());
 
             }, error => {
-                // Display error message if geolocation fails
                 messageBox.innerHTML = "Error getting location: " + error.message;
                 console.error("Geolocation Error:", error.message);
             });
         } else {
-            // Display message if geolocation is not supported
             messageBox.innerHTML = "Geolocation is not supported by your browser.";
         }
     }
 
-    // Fetch the GeoJSON data and then run the analysis
+    // Load data and run analysis
     fetch(geojsonUrl)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
-            // Once data is loaded, run the main analysis function
+            console.log("Loaded parcels data:", data);
             runAnalysis(data);
         })
         .catch(error => {
-            // Display error if data loading fails
             messageBox.innerHTML = 'Error loading data. Please check the network connection or the URL.';
             console.error('Data Loading Error:', error);
         });
