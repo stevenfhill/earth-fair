@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cary Parcel Data</title>
+    <title>Find My Location</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIINfBG9rRspU3y8xUf/Masterc/g+EaXoYfA="
         crossorigin=""/>
@@ -23,48 +23,15 @@
     crossorigin=""></script>
 
 <script>
-    // Initialize the map and set its view to a central point in Cary, NC
+    // Initialize the map and set a default view
     var map = L.map('map').setView([35.78, -78.78], 12);
 
-    // Add a tile layer (the base map)
+    // Add a base tile layer from OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Fetch and add your GeoJSON data to the map
-    fetch('cary_parcel.json')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Create a GeoJSON layer
-            var geojsonLayer = L.geoJSON(data, {
-                style: function(feature) {
-                    return {
-                        color: '#ff7800',
-                        weight: 2,
-                        opacity: 0.65
-                    };
-                },
-                onEachFeature: function(feature, layer) {
-                    if (feature.properties && feature.properties.ID) {
-                        layer.bindPopup("Parcel ID: " + feature.properties.ID);
-                    }
-                }
-            }).addTo(map);
-
-            // Fit the map view to the bounds of the GeoJSON data
-            map.fitBounds(geojsonLayer.getBounds());
-        })
-        .catch(error => {
-            console.error('Error loading GeoJSON data:', error);
-            alert('Error loading the data. Make sure cary_parcel.json is in the same folder.');
-        });
-
-    // Functionality to find and display the user's location
+    // Function to find and display the user's location
     function findUserLocation() {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(function(position) {
@@ -79,7 +46,6 @@
                 // Center the map on the user's location
                 map.setView(userLocation, 16);
             }, function(error) {
-                // Handle errors
                 console.error("Error getting user location:", error.message);
                 alert("Could not get your location. Please ensure location services are enabled.");
             });
