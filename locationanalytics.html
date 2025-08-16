@@ -85,7 +85,6 @@
             const geojsonLayer = new L.GeoJSON.AJAX('https://raw.githubusercontent.com/stevenfhill/earth-fair/main/school_buffer.json', {
                 onEachFeature: function(feature, layer) {
                     // You can add styling or popups here for the GeoJSON layer if needed
-                    // For example, layer.bindPopup("Polygon information");
                 }
             });
 
@@ -106,14 +105,21 @@
                             // Center the map on the user's location with a close zoom level
                             map.setView(userLatLng, 15);
 
-                            // Check if the user is inside the polygon using Turf.js
-                            const polygon = geojsonLayer.toGeoJSON();
-                            const isInside = turf.booleanPointInPolygon(turf.point([userLatLng.lng, userLatLng.lat]), polygon);
+                            // Convert the Leaflet GeoJSON layer to a Turf.js FeatureCollection
+                            const featureCollection = geojsonLayer.toGeoJSON();
 
-                            if (isInside) {
-                                showCustomMessage("🎉 You are inside the polygon!");
+                            // Check if the user is inside ANY of the polygons
+                            let isInsideAny = false;
+                            featureCollection.features.forEach(feature => {
+                                if (turf.booleanPointInPolygon(turf.point([userLatLng.lng, userLatLng.lat]), feature.geometry)) {
+                                    isInsideAny = true;
+                                }
+                            });
+
+                            if (isInsideAny) {
+                                showCustomMessage("you are a creep");
                             } else {
-                                showCustomMessage("You are not inside the polygon.");
+                                showCustomMessage("go to go man");
                             }
                         },
                         function(error) {
