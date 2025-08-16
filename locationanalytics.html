@@ -4,72 +4,130 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wake County Map</title>
-    <!-- Leaflet CSS -->
+    <!-- Leaflet CSS for map styling -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <title>Custom Alert</title>
-     <style>
-        /* Styling for the map container */
-        #map-container {
-            height: 500px; /* Set the height of the map container */
-            margin: 20px; /* Add margin around the map container */
-            border: 2px solid #ddd; /* Add a border around the map container */
-            border-radius: 8px; /* Add border radius to make it rounded */
+    <!-- Tailwind CSS for modern, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font for clean typography -->
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
         }
 
-        /* Styling for the map element */
+        /* Basic styling for the map container */
+        #map-container {
+            height: 500px;
+            margin: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden; /* Ensures the map stays within its container's rounded corners */
+        }
+
         #map {
-            width: 100%; /* Make the map fill the entire width of its container */
-            height: 100%; /* Make the map fill the entire height of its container */
+            width: 100%;
+            height: 100%;
         }
     </style>
-
 </head>
-<body>
-    <div id="map-container">
-        <!-- Map will be rendered here -->
+<body class="bg-gray-100 flex flex-col items-center justify-start min-h-screen p-4">
+
+    <!-- Main header with a bit of style -->
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Wake County Geo-Fencing App</h1>
+
+    <div id="map-container" class="w-full max-w-4xl shadow-lg rounded-xl">
+        <!-- The map will be rendered here -->
         <div id="map"></div>
+    </div>
+
+    <!-- Custom message box to replace alert() -->
+    <div id="message-box" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto">
+            <p id="message-text" class="text-lg font-semibold text-gray-800 mb-4"></p>
+            <button id="close-button" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                Close
+            </button>
+        </div>
     </div>
 
     <!-- Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-ajax/dist/leaflet.ajax.min.js"></script>
-    <script src="https://unpkg.com/@turf/turf@6.3.0"></script>
-
+    <script src="https://unpkg.com/@turf/turf@6.3.0/turf.min.js"></script>
 
     <script>
-        // Initialize the map centered on Wake County, North Carolina
-        var map = L.map('map').setView([35.77603969549853, -78.63832970038803], 15);
+        // Use window.onload to ensure all elements are loaded before running the script
+        window.onload = function() {
+            // Initialize the map centered on Wake County, North Carolina
+            const map = L.map('map').setView([35.77603969549853, -78.63832970038803], 12);
 
-        // Add a basemap (you can replace this with your preferred basemap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+            // Add a base tile layer from OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
-        var geojsonLayer = new L.GeoJSON.AJAX('https://raw.githubusercontent.com/stevenfhill/earth-fair/main/school_buffer.json').addTo(map);
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function (position) {
-                var userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+            // Get references to the custom message box elements
+            const messageBox = document.getElementById('message-box');
+            const messageText = document.getElementById('message-text');
+            const closeButton = document.getElementById('close-button');
 
-                // Check if the user is inside the polygon
-                if (isPointInsidePolygon(userLatLng, geojsonLayer)) {
-                    alert("You are inside the polygon!");
-                    map.setView([userLatLng.lat, userLatLng.lng], 4);
-                    } else {
-                    alert("You are not in the polygon.");
+            // Function to show the custom message box
+            function showCustomMessage(message) {
+                messageText.textContent = message;
+                messageBox.classList.remove('hidden');
+            }
+
+            // Hide the message box when the close button is clicked
+            closeButton.addEventListener('click', () => {
+                messageBox.classList.add('hidden');
+            });
+
+            // Load the GeoJSON file containing the polygon
+            const geojsonLayer = new L.GeoJSON.AJAX('https://raw.githubusercontent.com/stevenfhill/earth-fair/main/school_buffer.json', {
+                onEachFeature: function(feature, layer) {
+                    // You can add styling or popups here for the GeoJSON layer if needed
+                    // For example, layer.bindPopup("Polygon information");
                 }
             });
-        } else {
-            alert("Geolocation is not supported by this browser.");
-        }
 
-        // Function to check if a point is inside a polygon
-        function isPointInsidePolygon(point, polygonLayer) {
-            var polygon = polygonLayer.toGeoJSON();
-            return turf.booleanPointInPolygon(turf.point([point.lng, point.lat]), polygon.geometry);
-        }
-       
+            // Add the GeoJSON layer to the map when it is loaded
+            geojsonLayer.on('data:loaded', function() {
+                geojsonLayer.addTo(map);
 
+                // Try to get the user's current location after the GeoJSON data has loaded
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+
+                            // Add a marker for the user's location
+                            L.marker(userLatLng).addTo(map)
+                                .bindPopup("You are here!").openPopup();
+
+                            // Center the map on the user's location with a close zoom level
+                            map.setView(userLatLng, 15);
+
+                            // Check if the user is inside the polygon using Turf.js
+                            const polygon = geojsonLayer.toGeoJSON();
+                            const isInside = turf.booleanPointInPolygon(turf.point([userLatLng.lng, userLatLng.lat]), polygon);
+
+                            if (isInside) {
+                                showCustomMessage("🎉 You are inside the polygon!");
+                            } else {
+                                showCustomMessage("You are not inside the polygon.");
+                            }
+                        },
+                        function(error) {
+                            // Handle geolocation errors gracefully
+                            console.error("Geolocation error:", error);
+                            showCustomMessage("Geolocation failed: " + error.message);
+                        }
+                    );
+                } else {
+                    // Handle the case where the browser does not support geolocation
+                    showCustomMessage("Geolocation is not supported by your browser.");
+                }
+            });
+        };
     </script>
-    <script src="https://unpkg.com/@turf/turf@6.3.0"></script>
 </body>
 </html>
