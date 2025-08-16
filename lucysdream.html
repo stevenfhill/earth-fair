@@ -111,18 +111,17 @@
                     }
                 }).addTo(map);
 
-                // Calculate the median ID of the collected parcels
+                // Calculate the average income of the collected parcels
                 if (parcelsWithinBuffer.features.length > 0) {
-                    const ids = parcelsWithinBuffer.features.map(feature => feature.properties.ID);
-                    ids.sort((a, b) => a - b);
-                    const mid = Math.floor(ids.length / 2);
-                    const medianID = ids.length % 2 !== 0 ? ids[mid] : (ids[mid - 1] + ids[mid]) / 2;
+                    const incomeValues = parcelsWithinBuffer.features.map(feature => feature.properties.income);
+                    const sum = incomeValues.reduce((a, b) => a + b, 0);
+                    const averageIncome = sum / incomeValues.length;
 
                     // Update the message box with the results
                     messageBox.innerHTML = `
                         <p><strong>Analysis Complete!</strong></p>
                         <p>Parcels found: ${parcelsWithinBuffer.features.length}</p>
-                        <p>Median Parcel ID: ${medianID}</p>
+                        <p>Average Income: $${averageIncome.toFixed(2)}</p>
                     `;
                 } else {
                     messageBox.innerHTML = "No parcels found within the 3-mile buffer.";
