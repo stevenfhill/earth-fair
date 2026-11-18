@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wake County Map</title>
+    <!-- Leaflet CSS for map styling -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Tailwind CSS for modern, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+        }
+
+        #map-container {
+            height: 500px;
+            margin: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        #message-box {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .is-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-start min-h-screen p-4">
+
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Wake County Geo-Fencing App</h1>
+
+    <div id="map-container" class="w-full max-w-4xl shadow-lg rounded-xl">
+        <div id="map"></div>
+    </div>
+
+    <!-- Custom message box -->
+    <div id="message-box" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto">
+            <p id="message-text" class="text-lg font-semibold text-gray-800 mb-4"></p>
+            <button id="close-button" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Leaflet JavaScript and Turf.js -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6.3.0/turf.min.js"></script>
+
+    <script>
+        window.onload = function() {
+            // Initialize the map centered on Wake County, North Carolina
+            const map = L.map('map').setView([35.77603969549853, -78.63832970038803], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            const messageBox = document.getElementById('message-box');
+            const messageText = document.getElementById('message-text');
+            const closeButton = document.getElementById('close-button');
+
+            function showCustomMessage(message) {
+                messageText.textContent = message;
+                messageBox.classList.add('is-visible');
+                messageBox.classList.remove('hidden');
+            }
+
+            closeButton.addEventListener('click', () => {
+                messageBox.classList.remove('is-visible');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 300);
+            });
+
+            // Fetch the GeoJSON data cleanly using native fetch()
+            fetch('https://raw.githubusercontent.com/stevenfhill/earth-fair/main/school_buffer.json')
+                .then(response => response.json())
+                .then(geojsonData => {
+                    // Add the GeoJSON layer to the map
+                    L.geoJSON(geojsonData, {
+                        onEachFeature: function(feature, layer) {
+                            // Add styling or popups here if needed
+                        }
+                    }).addTo(map);
+
+                    // Get the user's current location after data is ready
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            function(position) {
+                                const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+
+                                // Add a marker for the user's location
+                                L.marker(userLatLng).addTo(map)
+                                    .bindPopup("You are here!").openPopup();
+
+                                map.setView(userLatLng, 15);
+
+                                // Check if the user is inside ANY of the polygons using raw GeoJSON features
+                                let isInsideAny = false;
+                                geojsonData.features.forEach(feature => {
+                                    if (turf.booleanPointInPolygon(turf.point([userLatLng.lng, userLatLng.lat]), feature.geometry)) {
+                                        isInsideAny = true;
+                                    }
+                                });
+
+                                if (isInsideAny) {
+                                    showCustomMessage("you are a creep");
+                                } else {
+                                    showCustomMessage("go to go man");
+                                }
+                            },
+                            function(error) {
+                                console.error("Geolocation error:", error);
+                                showCustomMessage("Geolocation failed: " + error.message);
+                            }
+                        );
+                    } else {
+                        showCustomMessage("Geolocation is not supported by your browser.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error loading GeoJSON:", error);
+                    showCustomMessage("Failed to load school buffer boundaries.");
+                });
+        };
+    </script>
+</body>
+</html>
