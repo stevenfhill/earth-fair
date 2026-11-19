@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Income Grid Lookup</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #map { height: 85vh; width: 100%; }
+    #info { padding: 12px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="info">Click the map (or use your location) to check mean income.</div>
+
+  <script>
+    const GEOJSON_URL =
+      "https://raw.githubusercontent.com/stevenfhill/earth-fair/main/income_grid.geojson";
+
+    // Change "mean_income" to match the exact field name in your GeoJSON properties
+    const INCOME_FIELD = "mean_income";
+
+    const map = L.map("map").setView([35.79, -78.78], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    let gridData = null;
+
+    fetch(GEOJSON_URL)
+      .then((res) => res.json())
+      .then((data) => {
+        gridData = data;
+        L.geoJSON(data, {
+          style: { color: "#2b6cb0", weight: 1, fillOpacity: 0.2 }
+        }).addTo(map);
+      })
+      .catch((err) => {
+        document.getElementById("info").textContent =
+          "Could not load income_grid.geojson: " + err.message;
+      });
+
+    function lookupIncome(lat, lng) {
+      if (!gridData) return;
+
+      const pt = turf.point([lng, lat]); // GeoJSON / Turf uses [lng, lat] order
+      const match = gridData.features.find((feature) =>
+        turf.booleanPointInPolygon(pt, feature)
+      );
+
+      const infoEl = document.getElementById("info");
+      if (match) {
+        const val = match.properties[INCOME_FIELD];
+        infoEl.textContent = `Mean income in tile: ${val ?? "Property not found"}`;
+      } else {
+        infoEl.textContent = "No grid tile found at this location.";
+      }
+    }
+
+    map.on("click", (e) => {
+      lookupIncome(e.latlng.lat, e.latlng.lng);
+    });
+  </script>
+</body>
+</html>
